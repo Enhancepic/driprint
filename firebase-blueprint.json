@@ -1,0 +1,342 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator registry entry for DriPrint platform operators.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the administrator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "description": "Administrative role level.",
+          "enum": ["super_admin", "catalog_admin"],
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin access was granted."
+        }
+      },
+      "required": ["uid", "role", "createdAt"]
+    },
+    "CatalogProduct": {
+      "title": "CatalogProduct",
+      "description": "Customizable blank product in the DriPrint catalog managed by administrators.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Display name of the blank product.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category or apparel classification (supports custom categories added by admin).",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9 &/()\\-]+$"
+        },
+        "technique": {
+          "type": "string",
+          "description": "Primary customization or apparel print technique supported (supports custom techniques added by admin).",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9 &/()\\-]+$"
+        },
+        "basePrice": {
+          "type": "number",
+          "description": "Base fulfillment cost in INR (₹)."
+        },
+        "fulfillmentTime": {
+          "type": "string",
+          "description": "Estimated production turnaround window.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "sku": {
+          "type": "string",
+          "description": "Catalog SKU code.",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[A-Z0-9\\-]+$"
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Whether the blank item is available for customization."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the admin who created the product.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "title",
+        "category",
+        "technique",
+        "basePrice",
+        "fulfillmentTime",
+        "sku",
+        "inStock",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CustomDesign": {
+      "title": "CustomDesign",
+      "description": "User-created or admin-featured product template configured in the DriPrint Design Maker.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Identifier of the base catalog product.",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productTitle": {
+          "type": "string",
+          "description": "Snapshot title of the base product.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "designName": {
+          "type": "string",
+          "description": "Custom template name.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "garmentColor": {
+          "type": "string",
+          "description": "Hex color code selected for the product base.",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "placement": {
+          "type": "string",
+          "description": "Print or embroidery placement area.",
+          "enum": ["Front", "Back", "Left Chest", "Sleeve", "Wrap"],
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "technique": {
+          "type": "string",
+          "description": "Selected production method.",
+          "minLength": 1,
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9 &/()\\-]+$"
+        },
+        "headlineText": {
+          "type": "string",
+          "description": "Primary custom typography line on product.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "subText": {
+          "type": "string",
+          "description": "Secondary typography line on product.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "textColor": {
+          "type": "string",
+          "description": "Hex color code for design artwork and text.",
+          "minLength": 7,
+          "maxLength": 7,
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "fontStyle": {
+          "type": "string",
+          "description": "Selected font family for custom text.",
+          "enum": ["Times New Roman", "Syne", "Plus Jakarta Sans", "JetBrains Mono", "Serif"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "graphicPreset": {
+          "type": "string",
+          "description": "Vector graphic badge or artwork motif identifier.",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Artwork scale percentage (50 to 150)."
+        },
+        "retailPrice": {
+          "type": "number",
+          "description": "Target store retail price in INR (₹)."
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of the design template.",
+          "enum": ["draft", "published", "archived"],
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "productId",
+        "productTitle",
+        "designName",
+        "garmentColor",
+        "placement",
+        "technique",
+        "headlineText",
+        "subText",
+        "textColor",
+        "fontStyle",
+        "graphicPreset",
+        "scale",
+        "retailPrice",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FulfillmentOrder": {
+      "title": "FulfillmentOrder",
+      "description": "Sample or production order submitted to DriPrint fulfillment centers.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the customer/creator.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designId": {
+          "type": "string",
+          "description": "Reference ID to the CustomDesign document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "designName": {
+          "type": "string",
+          "description": "Snapshot name of the custom design.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "productTitle": {
+          "type": "string",
+          "description": "Snapshot name of the blank garment/product.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "size": {
+          "type": "string",
+          "description": "Garment or product size.",
+          "enum": ["S", "M", "L", "XL", "2XL", "One Size"],
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Number of units ordered (1 to 500)."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total fulfillment cost in USD."
+        },
+        "shippingRegion": {
+          "type": "string",
+          "description": "Regional fulfillment hub routing.",
+          "enum": ["North America", "Europe", "Asia-Pacific", "Global Express"],
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "status": {
+          "type": "string",
+          "description": "Fulfillment pipeline state.",
+          "enum": ["pending", "printing", "shipped", "delivered", "cancelled"],
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": [
+        "ownerId",
+        "designId",
+        "designName",
+        "productTitle",
+        "size",
+        "quantity",
+        "totalAmount",
+        "shippingRegion",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted administrator records keyed by Firebase Auth UID."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/CatalogProduct" },
+      "description": "Blank customizable catalog products managed by DriPrint admins."
+    },
+    "/designs/{designId}": {
+      "schema": { "$ref": "#/entities/CustomDesign" },
+      "description": "Custom product designs created by users in the DriPrint Design Maker."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/FulfillmentOrder" },
+      "description": "Fulfillment and sample orders linked to custom designs."
+    }
+  }
+}

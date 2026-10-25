@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #e0f2fe;
+    --surface: #ffffff;
+    --ink: #0c4a6e;
+    --ink-dim: rgba(12, 74, 110, 0.65);
+    --ink-faint: rgba(12, 74, 110, 0.1);
+    --accent: #0284c7;
+    --font-display: 'Times New Roman', Times, Georgia, serif;
+    --font-sans: 'Times New Roman', Times, Georgia, serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html, body {
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .font-mono, .tabular-nums {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: #ffffff;
+  }
+}
+
+.studio-canvas-glow {
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.85) 0%, transparent 70%);
+}
+
+/* Custom subtle scrollbars for sky-blue & white studio panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(12, 74, 110, 0.04);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(12, 74, 110, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 132, 199, 0.55);
+}

@@ -1,0 +1,250 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Bootstrapped Admin uses verified runtime user email (zero DB reads, safe in list rules)
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'mohan.jalan07@gmail.com';
+    }
+
+    // Full Admin check (Bootstrapped Admin OR verified entry in /admins/{uid})
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Synchronized verbatim with firebase-blueprint.json)
+
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'role', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.role is string && data.role.size() >= 5 && data.role.size() <= 32 && data.role in ['super_admin', 'catalog_admin'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidCatalogProduct(data) {
+      return data.keys().hasAll([
+          'title', 'category', 'technique', 'basePrice', 'fulfillmentTime',
+          'sku', 'inStock', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'title', 'category', 'technique', 'basePrice', 'fulfillmentTime',
+          'sku', 'inStock', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        data.category is string && data.category.size() >= 1 && data.category.size() <= 50 &&
+        data.category.matches('^[a-zA-Z0-9 &/()\\-]+$') &&
+        data.technique is string && data.technique.size() >= 1 && data.technique.size() <= 50 &&
+        data.technique.matches('^[a-zA-Z0-9 &/()\\-]+$') &&
+        data.basePrice is number && data.basePrice >= 1 && data.basePrice <= 500000 &&
+        data.fulfillmentTime is string && data.fulfillmentTime.size() >= 1 && data.fulfillmentTime.size() <= 40 &&
+        data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 40 && data.sku.matches('^[A-Z0-9\\-]+$') &&
+        data.inStock is bool &&
+        data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 && data.createdBy.matches('^[a-zA-Z0-9_\\-]+$') &&
+        (data.createdBy == request.auth.uid || isAdmin()) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCustomDesign(data) {
+      return data.keys().hasAll([
+          'ownerId', 'productId', 'productTitle', 'designName', 'garmentColor',
+          'placement', 'technique', 'headlineText', 'subText', 'textColor',
+          'fontStyle', 'graphicPreset', 'scale', 'retailPrice', 'status',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'productId', 'productTitle', 'designName', 'garmentColor',
+          'placement', 'technique', 'headlineText', 'subText', 'textColor',
+          'fontStyle', 'graphicPreset', 'scale', 'retailPrice', 'status',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        (data.ownerId == request.auth.uid || isAdmin()) &&
+        data.productId is string && data.productId.size() >= 1 && data.productId.size() <= 64 && data.productId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.productTitle is string && data.productTitle.size() >= 1 && data.productTitle.size() <= 100 &&
+        data.designName is string && data.designName.size() >= 1 && data.designName.size() <= 80 &&
+        data.garmentColor is string && data.garmentColor.size() == 7 && data.garmentColor.matches('^#[0-9A-Fa-f]{6}$') &&
+        data.placement is string && data.placement.size() >= 1 && data.placement.size() <= 24 &&
+        data.placement in ['Front', 'Back', 'Left Chest', 'Sleeve', 'Wrap'] &&
+        data.technique is string && data.technique.size() >= 1 && data.technique.size() <= 50 &&
+        data.technique.matches('^[a-zA-Z0-9 &/()\\-]+$') &&
+        data.headlineText is string && data.headlineText.size() >= 0 && data.headlineText.size() <= 60 &&
+        data.subText is string && data.subText.size() >= 0 && data.subText.size() <= 60 &&
+        data.textColor is string && data.textColor.size() == 7 && data.textColor.matches('^#[0-9A-Fa-f]{6}$') &&
+        data.fontStyle is string && data.fontStyle.size() >= 1 && data.fontStyle.size() <= 32 &&
+        data.fontStyle in ['Times New Roman', 'Syne', 'Plus Jakarta Sans', 'JetBrains Mono', 'Serif'] &&
+        data.graphicPreset is string && data.graphicPreset.size() >= 1 && data.graphicPreset.size() <= 40 && data.graphicPreset.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.scale is number && data.scale >= 50 && data.scale <= 150 &&
+        data.retailPrice is number && data.retailPrice >= 5 && data.retailPrice <= 1000000 &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 20 &&
+        data.status in ['draft', 'published', 'archived'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidFulfillmentOrder(data) {
+      return data.keys().hasAll([
+          'ownerId', 'designId', 'designName', 'productTitle', 'size',
+          'quantity', 'totalAmount', 'shippingRegion', 'status',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'designId', 'designName', 'productTitle', 'size',
+          'quantity', 'totalAmount', 'shippingRegion', 'status',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        (data.ownerId == request.auth.uid || isAdmin()) &&
+        data.designId is string && data.designId.size() >= 1 && data.designId.size() <= 128 && data.designId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.designName is string && data.designName.size() >= 1 && data.designName.size() <= 80 &&
+        data.productTitle is string && data.productTitle.size() >= 1 && data.productTitle.size() <= 100 &&
+        data.size is string && data.size.size() >= 1 && data.size.size() <= 16 &&
+        data.size in ['S', 'M', 'L', 'XL', '2XL', 'One Size'] &&
+        data.quantity is int && data.quantity >= 1 && data.quantity <= 500 &&
+        data.totalAmount is number && data.totalAmount >= 1 && data.totalAmount <= 10000000 &&
+        data.shippingRegion is string && data.shippingRegion.size() >= 1 && data.shippingRegion.size() <= 32 &&
+        data.shippingRegion in ['North America', 'Europe', 'Asia-Pacific', 'Global Express'] &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 24 &&
+        data.status in ['pending', 'printing', 'shipped', 'delivered', 'cancelled'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Match Blocks
+
+    // Collection: /admins/{adminId}
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list: if false;
+      allow create: if isBootstrappedAdmin() && isValidId(adminId) && isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId && incoming().createdAt == request.time;
+      allow update: if isBootstrappedAdmin() && isValidId(adminId) && isValidAdminRecord(incoming()) &&
+        incoming().uid == existing().uid && incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['role']);
+      allow delete: if isBootstrappedAdmin() && isValidId(adminId);
+    }
+
+    // Collection: /products/{productId}
+    match /products/{productId} {
+      allow get: if isValidId(productId) && (existing().inStock == true || isAdmin());
+      // Cost-optimized list rule: evaluates resource.data with zero get()/exists() calls
+      allow list: if existing().inStock == true || isBootstrappedAdmin();
+      allow create: if isAdmin() && isValidId(productId) && isValidCatalogProduct(incoming()) &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidId(productId) && isValidCatalogProduct(incoming()) &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Toggle Stock Availability
+          incoming().diff(existing()).affectedKeys().hasOnly(['inStock', 'updatedAt']) ||
+          // Action 2: Edit Product Details & Pricing
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'category', 'technique', 'basePrice', 'fulfillmentTime', 'sku', 'inStock', 'updatedAt'
+          ])
+        );
+      allow delete: if isAdmin() && isValidId(productId);
+    }
+
+    // Collection: /designs/{designId}
+    match /designs/{designId} {
+      allow get: if isVerifiedUser() && isValidId(designId) && (existing().ownerId == request.auth.uid || isAdmin());
+      // Cost-optimized list rule: strictly checks resource.data against request.auth.uid or bootstrapped admin
+      allow list: if isVerifiedUser() && (
+        existing().ownerId == request.auth.uid ||
+        isBootstrappedAdmin()
+      );
+      allow create: if isVerifiedUser() && isValidId(designId) && isValidCustomDesign(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(designId) && isValidCustomDesign(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().productId == existing().productId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (existing().status != 'archived' || isAdmin()) && (
+          // Action 1: Owner updates design artwork, pricing, or status
+          (existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'designName', 'garmentColor', 'placement', 'technique',
+              'headlineText', 'subText', 'textColor', 'fontStyle',
+              'graphicPreset', 'scale', 'retailPrice', 'status', 'updatedAt'
+            ])
+          ) ||
+          // Action 2: Admin status override
+          (isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(designId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Collection: /orders/{orderId}
+    match /orders/{orderId} {
+      allow get: if isVerifiedUser() && isValidId(orderId) && (existing().ownerId == request.auth.uid || isAdmin());
+      // Cost-optimized list rule: strictly checks resource.data against request.auth.uid or bootstrapped admin
+      allow list: if isVerifiedUser() && (
+        existing().ownerId == request.auth.uid ||
+        isBootstrappedAdmin()
+      );
+      allow create: if isVerifiedUser() && isValidId(orderId) && isValidFulfillmentOrder(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/designs/$(incoming().designId)) &&
+        get(/databases/$(database)/documents/designs/$(incoming().designId)).data.ownerId == request.auth.uid;
+      allow update: if isVerifiedUser() && isValidId(orderId) && isValidFulfillmentOrder(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().designId == existing().designId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (!(existing().status in ['delivered', 'cancelled']) || isAdmin()) && (
+          // Action 1: Customer cancels a pending order
+          (existing().ownerId == request.auth.uid &&
+            existing().status == 'pending' &&
+            incoming().status == 'cancelled' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          // Action 2: Admin advances fulfillment pipeline status
+          (isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+  }
+}
